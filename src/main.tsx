@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { Game } from "./game/khunGame.ts";
 import "./index.css";
-import { Game } from "./scripts/khunGame.ts";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

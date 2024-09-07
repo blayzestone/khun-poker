@@ -1,15 +1,5 @@
-type Action = "pass" | "bet";
-
-type Card = "K" | "Q" | "J";
-
-type Strategy = { [key in Action]: number };
-
-class KhunGame {
-  root: GameNode;
-  constructor() {
-    this.root = nodeFactory();
-  }
-}
+import { CardRankings } from "./constants";
+import { Action, Card, Strategy } from "./types";
 
 interface KhunNode {
   cards: [Card, Card];
@@ -17,7 +7,7 @@ interface KhunNode {
   history: Action[];
 }
 
-class GameNode implements KhunNode {
+export class GameNode implements KhunNode {
   // Each card represents a player
   cards: [Card, Card];
   player: Card;
@@ -32,7 +22,7 @@ class GameNode implements KhunNode {
     bet: GameNode | TerminalNode,
     history: Action[]
   ) {
-    this.cards = ["K", "Q"];
+    this.cards = ["Q", "J"];
 
     this.history = history;
     this.player = this.history.length % 2 === 0 ? this.cards[0] : this.cards[1];
@@ -42,7 +32,6 @@ class GameNode implements KhunNode {
       Q: this.randomStrategy(),
       J: this.randomStrategy(),
     };
-
     this.pass = pass;
     this.bet = bet;
   }
@@ -51,21 +40,9 @@ class GameNode implements KhunNode {
     const rng = (Math.random() + Math.random()) / 2;
     return { bet: rng, pass: 1 - rng };
   }
-
-  next(): GameNode | TerminalNode {
-    return Math.random() < this.strategy[this.player].bet
-      ? this.bet
-      : this.pass;
-  }
 }
 
-const CardRankings = {
-  K: 2,
-  Q: 1,
-  J: 0,
-};
-
-class TerminalNode implements KhunNode {
+export class TerminalNode implements KhunNode {
   cards: [Card, Card];
   player: Card;
 
@@ -89,30 +66,6 @@ class TerminalNode implements KhunNode {
   }
 }
 
-type HandRange = {
-  high: number;
-  low: number;
-};
-
-export function getOtherCards(player: Card): Card[] {
-  const cards: Card[] = ["J", "Q", "K"];
-  return cards.filter((c) => c !== player);
-}
-
-export function getOpponentRange(player: Card, node: GameNode): HandRange {
-  const cards = getOtherCards(player);
-  const lastAction = node.history[node.history.length - 1];
-
-  const low = node.strategy[cards[0]][lastAction];
-  const high = node.strategy[cards[1]][lastAction];
-  const sum = low + high;
-
-  return {
-    low: low / sum,
-    high: high / sum,
-  };
-}
-
 export function nodeFactory(): GameNode {
   return createNodeTree([]);
   function createNodeTree(history: Action[]): GameNode {
@@ -134,33 +87,4 @@ export function nodeFactory(): GameNode {
     const bet = createNodeTree([...history, "bet"]);
     return new GameNode(pass, bet, history);
   }
-}
-
-export function Game() {
-  const game = new KhunGame();
-  PlayGame("Q", game.root.bet);
-}
-
-export function GetEV(
-  player: Card,
-  opponentRange: HandRange,
-  node: TerminalNode
-): number {
-  const otherCards = getOtherCards(player);
-
-  let ev = node.payoff(player, otherCards[0]) * opponentRange.low;
-  ev += node.payoff(player, otherCards[1]) * opponentRange.high;
-  return ev;
-}
-
-export function PlayGame(player: Card, current: GameNode | TerminalNode) {
-  if (current instanceof TerminalNode) return;
-
-  const nextNode = current.next();
-  if (nextNode instanceof TerminalNode) {
-    const opponentRange = getOpponentRange(player, current);
-    GetEV(player, opponentRange, nextNode);
-  }
-
-  PlayGame(player, nextNode);
 }
