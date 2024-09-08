@@ -1,5 +1,5 @@
 import { CardRankings } from "./constants";
-import { Action, Card, Strategy } from "./types";
+import { Action, Card } from "./types";
 
 interface KhunNode {
   cards: [Card, Card];
@@ -15,30 +15,19 @@ export class GameNode implements KhunNode {
   bet: GameNode | TerminalNode;
   history: Action[];
 
-  strategy: { [key in Card]: Strategy };
-
   constructor(
+    cards: [Card, Card],
     pass: GameNode | TerminalNode,
     bet: GameNode | TerminalNode,
     history: Action[]
   ) {
-    this.cards = ["Q", "J"];
+    this.cards = cards;
 
     this.history = history;
     this.player = this.history.length % 2 === 0 ? this.cards[0] : this.cards[1];
 
-    this.strategy = {
-      K: this.randomStrategy(),
-      Q: this.randomStrategy(),
-      J: this.randomStrategy(),
-    };
     this.pass = pass;
     this.bet = bet;
-  }
-
-  private randomStrategy(): Strategy {
-    const rng = (Math.random() + Math.random()) / 2;
-    return { bet: rng, pass: 1 - rng };
   }
 }
 
@@ -46,8 +35,12 @@ export class TerminalNode implements KhunNode {
   cards: [Card, Card];
   player: Card;
 
-  constructor(public history: Action[], public type: "showdown" | "fold") {
-    this.cards = ["K", "J"];
+  constructor(
+    cards: [Card, Card],
+    public history: Action[],
+    public type: "showdown" | "fold"
+  ) {
+    this.cards = cards;
     this.history = history;
 
     this.player = this.history.length % 2 === 0 ? this.cards[0] : this.cards[1];
@@ -66,25 +59,26 @@ export class TerminalNode implements KhunNode {
   }
 }
 
-export function nodeFactory(): GameNode {
+export function nodeFactory(cards: [Card, Card]): GameNode {
   return createNodeTree([]);
   function createNodeTree(history: Action[]): GameNode {
     const last = history.length - 1;
 
     if (history[last] === "pass") {
       // Both players pass
-      const pass = new TerminalNode([...history, "pass"], "showdown");
+      const pass = new TerminalNode(cards, [...history, "pass"], "showdown");
       const bet = createNodeTree([...history, "bet"]);
-      return new GameNode(pass, bet, history);
+      return new GameNode(cards, pass, bet, history);
     }
     if (history[last] === "bet") {
-      const pass = new TerminalNode([...history, "pass"], "fold");
-      const bet = new TerminalNode([...history, "bet"], "showdown");
-      return new GameNode(pass, bet, history);
+      const pass = new TerminalNode(cards, [...history, "pass"], "fold");
+      const bet = new TerminalNode(cards, [...history, "bet"], "showdown");
+
+      return new GameNode(cards, pass, bet, history);
     }
 
     const pass = createNodeTree([...history, "pass"]);
     const bet = createNodeTree([...history, "bet"]);
-    return new GameNode(pass, bet, history);
+    return new GameNode(cards, pass, bet, history);
   }
 }
