@@ -1,7 +1,49 @@
 import { CardRankings, CHANCE_PR, N_ACTIONS } from "./constants";
-import { Card } from "./types";
+import { Action, Card } from "./types";
 
-type Action = "p" | "b";
+export function Game() {
+  const game = new KhunGame();
+
+  const iterations = 100 * 1000;
+  let ev = 0;
+  for (let i = 0; i < iterations; i++) {
+    ev += game.cfr();
+    for (const key of game.infoSets.keys()) {
+      const infoSet = game.infoSets.get(key);
+      infoSet?.nextStrategy();
+    }
+  }
+  ev /= iterations;
+
+  displayResults(ev, game.infoSets);
+}
+
+export function displayResults(ev: number, infoSets: Map<string, InfoSet>) {
+  console.log("Player 1 expected value:", ev.toFixed(10));
+  console.log("Player 2 expected value:", (-ev).toFixed(10));
+  console.log(" ");
+
+  console.log("Player 1 strategies:");
+  for (const key of infoSets.keys()) {
+    if (key.length === 2) continue;
+    const infoSet = infoSets.get(key);
+    if (infoSet === undefined) continue;
+
+    const strategy = infoSet.avgStrategy().map((v) => v.toFixed(2));
+    console.log(key, strategy);
+  }
+  console.log(" ");
+
+  console.log("Player 2 strategies:");
+  for (const key of infoSets.keys()) {
+    if (key.length !== 2) continue;
+    const infoSet = infoSets.get(key);
+    if (infoSet === undefined) continue;
+
+    const strategy = infoSet.avgStrategy().map((v) => v.toFixed(2));
+    console.log(key, strategy);
+  }
+}
 
 class KhunGame {
   infoSets: Map<string, InfoSet>;
@@ -101,15 +143,6 @@ class KhunGame {
       0
     );
 
-    // if (c1 === "K") {
-    //   if (isPlayer1) {
-    //     console.log(c1 + history, actionUtils);
-    //   } else {
-    //     console.log(c2 + history, actionUtils);
-    //   }
-    //   console.log("strategy util", util);
-    // }
-
     const regrets = actionUtils.map((actionUtil) => actionUtil - util);
     if (isPlayer1) {
       infoSet.regretSum = regrets.map((r, i) => {
@@ -123,50 +156,6 @@ class KhunGame {
 
     return util;
   }
-}
-
-export function displayResults(ev: number, infoSets: Map<string, InfoSet>) {
-  console.log("Player 1 expected value:", ev.toFixed(10));
-  console.log("Player 2 expected value:", (-ev).toFixed(10));
-  console.log(" ");
-
-  console.log("Player 1 strategies:");
-  for (const key of infoSets.keys()) {
-    if (key.length === 2) continue;
-    const infoSet = infoSets.get(key);
-    if (infoSet === undefined) continue;
-
-    const strategy = infoSet.avgStrategy().map((v) => v.toFixed(2));
-    console.log(key, strategy);
-  }
-  console.log(" ");
-
-  console.log("Player 2 strategies:");
-  for (const key of infoSets.keys()) {
-    if (key.length !== 2) continue;
-    const infoSet = infoSets.get(key);
-    if (infoSet === undefined) continue;
-
-    const strategy = infoSet.avgStrategy().map((v) => v.toFixed(2));
-    console.log(key, strategy);
-  }
-}
-
-export function Game() {
-  const game = new KhunGame();
-
-  const iterations = 100 * 1000;
-  let ev = 0;
-  for (let i = 0; i < iterations; i++) {
-    ev += game.cfr();
-    for (const key of game.infoSets.keys()) {
-      const infoSet = game.infoSets.get(key);
-      infoSet?.nextStrategy();
-    }
-  }
-  ev /= iterations;
-
-  displayResults(ev, game.infoSets);
 }
 
 class InfoSet {

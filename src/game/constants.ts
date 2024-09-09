@@ -1,4 +1,6 @@
-export const CardRankings = {
+import { Card } from "./types";
+
+export const CardRankings: { [key in Card]: number } = {
   K: 2,
   Q: 1,
   J: 0,

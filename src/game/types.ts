@@ -1,5 +1,3 @@
-export type Action = "pass" | "bet";
+export type Action = "p" | "b";
 
-export type Card = "K" | "Q" | "J";
-
-export type Strategy = { [key in Action]: number };
+export type Card = "J" | "Q" | "K";
